@@ -51,7 +51,7 @@ Example:
 
 Jupyter notebook, otworzy się w przeglądarce. Nalezy wybrać plik `test.ipynb`. Parametry i ścieżki do analizowanych plików (w tym wypadku `Des_ex3.zip` i `startery.csv`) znajdują się w drugiej komórce pliku. W celu przetestowania innych danych i parametrów w drugiej komórce wpisać właściwe ścieżki i dane. W celu uruchomienia, każdą komórkę skryptu nalęży kliknąć wskazany na zdjęciu przycisk.
 
-![PRZYCISK](/Zrzut ekranu z 2021-08-19 07-21-39.png)
+![przycisk](/przycisk.png)
 
 
 

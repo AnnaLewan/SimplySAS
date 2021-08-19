@@ -6,7 +6,24 @@ PartSAS
 
 Performs part of genotyping of amplicon sequencing data by clustering errors and filtering artefacts. For now it can make one cluster (from dominant sequence) and find consensus seq for this cluster.
 
-To use:
+Files in repository:
+
+`PartSAS.py` - główny plik programu
+
+`Amplicon_module.py` i `Cluster_module.py` - pliki zwierające funkcje
+
+`environment.yml` - plik umozliwiający postawienie środowiska
+
+`fogsaa.cpp` - zewnętrzny program do alignmentu
+
+`Des_ex3.zip` - przykładowy plik z odczytami
+
+`startery.csv` - przykładowy plik ze starterami
+
+`test.ipynb` - plik ipythona zawierający cały skrypt i umożliwiający uruchomienie wszystkiego za pomocą jupyter notebook
+
+
+# To use:
 1. Download git repository:
 
 `Git clone https://github.com/AnnaLewan/AmpliSAS_py`

@@ -4,7 +4,7 @@ AmpliSAS reimplementation
 PartSAS 
 -----------------------------------------------------------------------------------------------------
 
-Performs part of genotyping of amplicon sequencing data by clustering errors and filtering artefacts.
+Performs part of genotyping of amplicon sequencing data by clustering errors and filtering artefacts. For now it can make one cluster (from dominant sequence) and find consensus seq for this cluster.
 
 To use:
 1. Download git repository:

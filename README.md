@@ -10,15 +10,11 @@ Files in repository:
 
 `PartSAS.py` - główny plik programu
 
-`Amplicon_module.py` i `Cluster_module.py` - pliki zwierające funkcje
-
 `environment.yml` - plik umozliwiający postawienie środowiska
 
 `fogsaa.cpp` - zewnętrzny program do alignmentu
 
-`Des_ex3.zip` - przykładowy plik z odczytami
-
-`startery.csv` - przykładowy plik ze starterami
+`Salmo_MHC_I.zip` - przykładowy plik z odczytami
 
 `test.ipynb` - plik ipythona zawierający cały skrypt i umożliwiający uruchomienie wszystkiego za pomocą jupyter notebook
 
@@ -43,34 +39,42 @@ Files in repository:
 4. Use script as shown below:
 
 
-`python PartSAS.py -i seq_file -d csv_file -o output_dir -ml min_length -el expected_len -se substitution_error_threshold -df min_dominant_frequency_threshold -af min_amplicon_seq_frequency`
+`python PartSAS.py -i seq_file -o output_dir -ml min_length -el expected_len -se substitution_error_threshold -df min_dominant_frequency_threshold -af min_amplicon_seq_frequency`
 
-`-i,'--INPUT',type=str,required=True,help="Input set of FASTQ or FASTA files packed into a unique .ZIP or .TAR.GZ file.")`
+`-i,'--INPUT',type=str,required=True,help="Input set of FASTQ or FASTA files packed into a unique .ZIP or .TAR.GZ file."`
 
-`-d,'--DATA',type=str,required=True,help="CSV file with primer/amplicon data.")`
+`-o,'--OUTPUT',type=str,required=True,help="Output folder name."`
 
-`-o,'--OUTPUT',type=str,required=True,help="Output folder name.")`
+`-el, '--EXPLEN',type=int,required=False,help="Expected length of the marker sequence."`
 
-`-ml, '--MINLEN',type=int,required=True,help="Minimal length of sequence to consider clustering.")`
+`-se, '--SUBERROR',type=float,required=False,help="Threshold for permissible substitution error (%)."`
 
-`-el, '--EXPLEN',type=int,required=True,help="Expected length of the marker sequence.")`
+`-df, '--DOMFREQ',type=float,required=False,help="Minimum frequency respect to the dominant (%)."`
 
-`-se, '--SUBERROR',type=float,required=True,help="Threshold for permissible substitution error (%).")`
+`-af, '--AMFREQ',type=float,required=False,help="Minimum frequency per-amplicon (%)."`
 
-`-df, '--DOMFREQ',type=float,required=True,help="Minimum frequency respect to the dominant (%).")`
+`-af", '--AMFREQ',type=float,required=False,help="Minimum sequence frequency per-amplicon (%)."`
 
-`-af, '--AMFREQ',type=float,required=True,help="Minimum frequency per-amplicon (%).")`
+`-ch", '--CHIMERA',type=int,required=False,help="Minimal length of match within sequences to consider as chimera (bp)."`
+
+`-al", '--MAXALL',type=int,required=False,help="Maximal number of allels in one amplicon."`
+
+`-ad", '--MINDEPTH',type=int,required=False,help="Minimal depth of amplicon to not be discarded."`
+
+`-mf", '--MINFREQ',type=float,required=False,help="Minimal frequency of consensus sequence (allel) to not be discarded in filtering."`
+
+`-nc", '--NONCOD',type=int,required=False,help="Discard noncoding sequences (1 -on; default off)."`
 
 
 Example:
 
-`python PartSAS.py -i Des_ex3.zip -d startery.csv -o /test -ml 100 -el 176 -se 1.56 -df 38.11 -af 43.64`
+`python PartSAS.py -i Des_ex3.zip -o /test -ml 100 -el 176 -se 1.56 -df 38.11 -af 43.64`
 
 4. Alternatywnie przez jupiter:
 
 `jupyter notebook`
 
-Jupyter notebook, otworzy się w przeglądarce. Nalezy wybrać plik `test.ipynb`. Parametry i ścieżki do analizowanych plików (w tym wypadku `Des_ex3.zip` i `startery.csv`) znajdują się w drugiej komórce pliku. W celu przetestowania innych danych i parametrów w drugiej komórce wpisać właściwe ścieżki i dane. W celu uruchomienia, każdą komórkę skryptu nalęży kliknąć wskazany na zdjęciu przycisk.
+Jupyter notebook, otworzy się w przeglądarce. Nalezy wybrać plik `test.ipynb`. Parametry i ścieżki do analizowanych plików znajdują się w drugiej komórce pliku. W celu przetestowania innych danych i parametrów w drugiej komórce wpisać właściwe ścieżki i dane. W celu uruchomienia, każdą komórkę skryptu nalęży kliknąć wskazany na zdjęciu przycisk.
 
 ![przycisk](/przycisk.png)
 

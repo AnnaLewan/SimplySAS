@@ -36,7 +36,11 @@ Files in repository:
 
 `conda activate magisterka`
 
-3. Use script as shown below: ---- NA TEN MOMENT NIE DZIAŁA (problem z implementacja klas z osobnych plików)
+3. Install fogsaa
+
+`g++ fogsaa.cpp -o fogsaa`
+
+4. Use script as shown below:
 
 
 `python PartSAS.py -i seq_file -d csv_file -o output_dir -ml min_length -el expected_len -se substitution_error_threshold -df min_dominant_frequency_threshold -af min_amplicon_seq_frequency`

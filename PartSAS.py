@@ -33,7 +33,7 @@ parser.add_argument("-ch", '--CHIMERA',type=int,required=False,help="Minimal len
 parser.add_argument("-al", '--MAXALL',type=int,required=False,help="Maximal number of allels in one amplicon.")
 parser.add_argument("-ad", '--MINDEPTH',type=int,required=False,help="Minimal depth of amplicon to not be discarded.")
 parser.add_argument("-mf", '--MINFREQ',type=float,required=False,help="Minimal frequency of consensus sequence (allel) to not be discarded in filtering.")
-parser.add_argument("-nc", '--NONCOD',type=int,required=False,help="Discard noncoding sequences (1 -on; default off)."
+parser.add_argument("-nc", '--NONCOD',type=int,required=False,help="Discard noncoding sequences (1 -on; default off).")
 
 
 args = parser.parse_args()

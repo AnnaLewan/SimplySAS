@@ -68,7 +68,7 @@ Files in repository:
 
 Example:
 
-`python PartSAS.py -i Des_ex3.zip -o /test -ml 100 -el 176 -se 1.56 -df 38.11 -af 43.64`
+`python PartSAS.py -i Des_ex3.zip -o /test -el 176 -se 1.56 -df 38.11 -af 43.64`
 
 4. Alternatywnie przez jupiter:
 

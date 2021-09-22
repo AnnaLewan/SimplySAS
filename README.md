@@ -39,7 +39,7 @@ Files in repository:
 4. Use script as shown below:
 
 
-`python PartSAS.py -i seq_file -o output_dir -ml min_length -el expected_len -se substitution_error_threshold -df min_dominant_frequency_threshold -af min_amplicon_seq_frequency`
+`python PartSAS.py -i seq_file -o output_dir -el expected_len -se substitution_error_threshold -df min_dominant_frequency_threshold -af min_amplicon_seq_frequency`
 
 `-i,'--INPUT',type=str,required=True,help="Input set of FASTQ or FASTA files packed into a unique .ZIP or .TAR.GZ file."`
 

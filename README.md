@@ -1,22 +1,25 @@
-# AmpliSAS_py
+# SimplySAS
+
 AmpliSAS reimplementation
 
-PartSAS 
+SimplySAS 
 -----------------------------------------------------------------------------------------------------
 
-Performs part of genotyping of amplicon sequencing data by clustering errors and filtering artefacts. For now it can make one cluster (from dominant sequence) and find consensus seq for this cluster.
+Reimplementation of AmpliSAS. Performs genotyping of amplicon sequencing data by clustering errors and filtering artefacts following a 3-step based analysis: de-multiplexing, clustering and filtering.
 
 Files in repository:
 
-`PartSAS.py` - główny plik programu
+`SimplySAS.py` - main script
 
-`environment.yml` - plik umozliwiający postawienie środowiska
+`environment.yml` - environment file
 
-`fogsaa.cpp` - zewnętrzny program do alignmentu
+`fogsaa.cpp` - alignement softwere
 
-`Salmo_MHC_I.zip` - przykładowy plik z odczytami
+`Salmo_MHC_I.zip` - example multifile for NEW METHOD
 
-`test.ipynb` - plik ipythona zawierający cały skrypt i umożliwiający uruchomienie wszystkiego za pomocą jupyter notebook
+`primers.csv` - example file with primers data for NEW METHOD
+
+`barcodes_primers.csv` - example file with primers and barcodes data for OLD METHOD
 
 
 # To use:
@@ -30,7 +33,7 @@ Files in repository:
 
 `conda env create -f environment.yml`
 
-`conda activate magisterka`
+`conda activate SimplySAS`
 
 3. Install fogsaa
 

@@ -25,9 +25,9 @@ Files in repository:
 # To use:
 1. Download git repository:
 
-`Git clone https://github.com/AnnaLewan/AmpliSAS_py`
+`Git clone https://github.com/AnnaLewan/Simply_SAS`
 
-`cd AmpliSAS_py`
+`cd SimplySAS`
 
 2. Create environment:
 
@@ -42,44 +42,43 @@ Files in repository:
 4. Use script as shown below:
 
 
-`python PartSAS.py -i seq_file -o output_dir -el expected_len -se substitution_error_threshold -df min_dominant_frequency_threshold -af min_amplicon_seq_frequency`
+`python SimplySAS.py -i seq_file -m new -p primer_file -o output_dir -el expected_len -se substitution_error_threshold -df min_dominant_frequency_threshold -af min_amplicon_seq_frequency`
 
 `-i,'--INPUT',type=str,required=True,help="Input set of FASTQ or FASTA files packed into a unique .ZIP or .TAR.GZ file."`
 
-`-o,'--OUTPUT',type=str,required=True,help="Output folder name."`
+`-m,'--METHOD',type=str,required=True,help="Method used to obtain reads (old or new). old - demultiplexing needed, new - without demultiplexing."`
 
-`-el, '--EXPLEN',type=int,required=False,help="Expected length of the marker sequence."`
+`-bp, type=str, required=False, help="CSV file with primer and barcode data for old method."`
 
-`-se, '--SUBERROR',type=float,required=False,help="Threshold for permissible substitution error (%)."`
+`-p, type=str, required=False, help="CSV file with primer data for new method."`
 
-`-df, '--DOMFREQ',type=float,required=False,help="Minimum frequency respect to the dominant (%)."`
+`-o, type=str, required=True, help="Output folder name."`
 
-`-af, '--AMFREQ',type=float,required=False,help="Minimum frequency per-amplicon (%)."`
+`-el, type=int, required=False, help="Expected length of the marker sequence."`
 
-`-af", '--AMFREQ',type=float,required=False,help="Minimum sequence frequency per-amplicon (%)."`
+`-se, type=float, required=False, help="Threshold for permissible substitution error (%)."`
 
-`-ch", '--CHIMERA',type=int,required=False,help="Minimal length of match within sequences to consider as chimera (bp)."`
+`-df, type=float, required=False, help="Minimum frequency respect to the dominant (%)."`
 
-`-al", '--MAXALL',type=int,required=False,help="Maximal number of allels in one amplicon."`
+`-af, type=float, required=False, help="Minimum frequency per-amplicon (%)."`
 
-`-ad", '--MINDEPTH',type=int,required=False,help="Minimal depth of amplicon to not be discarded."`
+`-af, type=float, required=False, help="Minimum sequence frequency per-amplicon (%)."`
 
-`-mf", '--MINFREQ',type=float,required=False,help="Minimal frequency of consensus sequence (allel) to not be discarded in filtering."`
+`-ch, type=int, required=False, help="Minimal length of match within sequences to consider as chimera (bp)."`
 
-`-nc", '--NONCOD',type=int,required=False,help="Discard noncoding sequences (1 -on; default off)."`
+`-al, type=int, required=False, help="Maximal number of allels in one amplicon."`
+
+`-ad, type=int, required=False, help="Minimal depth of amplicon to not be discarded."`
+
+`-ma, type=int, required=False, help="Minimal allel depth to not be discarded in filtering."`
+
+`-t, type=int, required=False, help="Number of threads used in analysis."`
 
 
 Example:
 
-`python PartSAS.py -i Des_ex3.zip -o /test -el 176 -se 1.56 -df 38.11 -af 43.64`
+`python PartSAS.py -i Des_ex3.zip -m new -p 'primers.csv' -o /test -el 176 -se 1.56 -df 38.11 -af 43.64 -t 4`
 
-4. Alternatywnie przez jupiter:
-
-`jupyter notebook`
-
-Jupyter notebook, otworzy się w przeglądarce. Nalezy wybrać plik `test.ipynb`. Parametry i ścieżki do analizowanych plików znajdują się w drugiej komórce pliku. W celu przetestowania innych danych i parametrów w drugiej komórce wpisać właściwe ścieżki i dane. W celu uruchomienia, każdą komórkę skryptu nalęży kliknąć wskazany na zdjęciu przycisk.
-
-![przycisk](/przycisk.png)
 
 
 

@@ -44,13 +44,13 @@ Files in repository:
 
 `python SimplySAS.py -i seq_file -m new -p primer_file -o output_dir -el expected_len -se substitution_error_threshold -df min_dominant_frequency_threshold -af min_amplicon_seq_frequency`
 
-`-i,'--INPUT',type=str,required=True,help="Input set of FASTQ or FASTA files packed into a unique .ZIP or .TAR.GZ file."`
+`-i,'--INPUT',type=str,required=True, help="Input set of FASTQ or FASTA files packed into a unique .ZIP or .TAR.GZ file."`
 
-`-m,'--METHOD',type=str,required=True,help="Method used to obtain reads (old or new). old - demultiplexing needed, new - without demultiplexing."`
+`-m,'--METHOD',type=str,required=True, help="Method used to obtain reads (old or new). old - demultiplexing needed, new - without demultiplexing."`
 
-`-bp, type=str, required=False, help="CSV file with primer and barcode data for old method."`
+`-bp, type=str, required=False, help="CSV file with primer and barcode data for old method. 5'->3' direction."`
 
-`-p, type=str, required=False, help="CSV file with primer data for new method."`
+`-p, type=str, required=False, help="CSV file with primer data for new method. 5'->3' direction."`
 
 `-o, type=str, required=True, help="Output folder name."`
 

@@ -15,8 +15,6 @@ Files in repository:
 
 `fogsaa.cpp` - alignement softwere
 
-`Salmo_MHC_I.zip` - example multifile for NEW METHOD
-
 `primers.csv` - example file with primers data for NEW METHOD
 
 `barcodes_primers.csv` - example file with primers and barcodes data for OLD METHOD

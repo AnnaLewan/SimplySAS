@@ -5,7 +5,7 @@ AmpliSAS reimplementation
 SimplySAS 
 -----------------------------------------------------------------------------------------------------
 
-Reimplementation of AmpliSAS. Performs genotyping of amplicon sequencing data by clustering errors and filtering artefacts following a 3-step based analysis: de-multiplexing, clustering and filtering.
+Reimplementation of AmpliSAS. Performs genotyping of amplicon sequencing data by clustering errors and filtering artefacts following a 3-step based analysis: file preprocessing, clustering and filtering.
 
 Files in repository:
 

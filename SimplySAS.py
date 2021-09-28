@@ -56,6 +56,10 @@ if args.METHOD == None:
 else:
 	method = args.METHOD
 
+
+if args.BARPRI == None and args.PRIMER == None:
+	raise Exception('Primer/barcode file does not exist')
+
     
 if args.BARPRI == None:
 	barcode_file = None
@@ -66,9 +70,6 @@ if args.PRIMER == None:
 	primers_file = None
 else:
 	primers_file = args.PRIMER
-    
-if os.path.isfile(primers_file) != True and os.path.isfile(barcode_file) != True:
-    raise Exception('Primer/barcode file does not exist')
     
 
 if args.OUTPUT == None:
@@ -557,21 +558,21 @@ def old_method():
             if re.search(patternA, str(checked_seq)) != None and re.search(patternB, str(checked_seq)) != None:
                 strippedA = re.sub(patternA, '', str(checked_seq))
                 strippedB = re.sub(patternB, '', strippedA)
-                amplicon_df['Amplicon'] = data.at[i, 'sample']
-                amplicon_df['ID'] = checked_id
-                amplicon_df['Sequence'] = strippedB
+                amplicon_df.at[0, 'Amplicon'] = data.at[i, 'sample']
+                amplicon_df.at[0, 'ID'] = checked_id
+                amplicon_df.at[0, 'Sequence'] = strippedB
             elif re.search(patternA, str(reversedcom_seq)) != None and re.search(patternB, str(reversedcom_seq)) != None:
                 strippedA = re.sub(patternA, '', str(reversedcom_seq))
                 strippedB = re.sub(patternB, '', strippedA)
-                amplicon_df['Amplicon'] = data.at[i, 'sample']
-                amplicon_df['ID'] = checked_id
-                amplicon_df['Sequence'] = strippedB
+                amplicon_df.at[0, 'Amplicon'] = data.at[i, 'sample']
+                amplicon_df.at[0, 'ID'] = checked_id
+                amplicon_df.at[0, 'Sequence'] = strippedB
                 
             #all_amplicons = all_amplicons.append(amplicon_df.iloc[0])
             frames = [all_amplicons, amplicon_df]
             all_amplicons = pd.concat(frames, ignore_index=True)
             
-    all_amplicons.sort_values('Amplicon', axis=1, inplace=True)
+    all_amplicons.sort_values(by=['Amplicon'], inplace=True)
     
     # Tworzenie fasta dla poszczególnych amplikonów
     for k in iterator:
@@ -583,7 +584,7 @@ def old_method():
                 outfile.write('>' + row.ID + '\n' + row.Sequence + '\n')
                 
         # Wycięcie starterów
-        command = f'cat {outpath} | seqkit amplicon -F {primer_f} -R {primer_r_rc} -r {refion_f}:{region_r} -o {clean}/amplicon_{amplicon_number}.fa'
+        command = f'cat {outpath} | seqkit amplicon -F {primer_f} -R {primer_r_rc} -r {region_f}:{region_r} -o {clean}/amplicon_{amplicon_number}.fa'
         process = subprocess.check_output(command, shell=True)
 
 
@@ -682,7 +683,7 @@ def fazeI(pair):
 ################ END OF FUNCTIONS ########################
 ##########################################################
 
- Prework start
+#Prework start
 if method == 'new':
 	method_end = 'fastq'
 	new_method()

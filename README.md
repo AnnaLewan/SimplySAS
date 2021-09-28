@@ -39,8 +39,15 @@ Files in repository:
 
 4. Use script as shown below:
 
+Command:
+
 
 `python SimplySAS.py -i seq_file -m new -p primer_file -o output_dir -el expected_len -se substitution_error_threshold -df min_dominant_frequency_threshold -af min_amplicon_seq_frequency`
+
+
+Options:
+
+
 
 `-i,'--INPUT',type=str,required=True, help="Input set of FASTQ or FASTA files packed into a unique .ZIP or .TAR.GZ file."`
 

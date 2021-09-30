@@ -82,7 +82,7 @@ Options:
 
 Example:
 
-`python SimplySAS.py -i Des_ex3.zip -m new -p 'primers.csv' -o /test -el 176 -se 1.56 -df 38.11 -af 43.64 -t 4`
+`python SimplySAS.py -i Des_ex3.zip -m new -p 'primers.csv' -o /home/test -el 176 -se 1.56 -df 38.11 -af 43.64 -t 4`
 
 
 

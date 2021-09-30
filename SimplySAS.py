@@ -1,28 +1,31 @@
 #!/usr/bin/env python3
 
-import sys
-import os
-import pandas as pd
-import re
-from Bio import SeqIO
-from Bio.Seq import Seq
-from Bio import AlignIO
-from Bio.Align import AlignInfo
-from Bio import pairwise2
-import zipfile
-import tarfile
-import gzip
-from collections import defaultdict
-import uuid
-import subprocess
-import shutil
 import argparse
+from collections import defaultdict
+import gzip
 from multiprocessing import Pool
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tarfile
 import time
+import uuid
+import zipfile
+
+from Bio import AlignIO
+from Bio import pairwise2
+from Bio import SeqIO
+from Bio.Align import AlignInfo
+from Bio.Seq import Seq
+import pandas as pd
+
+
 
 parser = argparse.ArgumentParser(prog='SimplySAS', description="Reimplementation of AmpliSAS. Performs genotyping of amplicon sequencing data by clustering errors and filtering artefacts following a 3-step based analysis: de-multiplexing, clustering and filtering.")
 
-parser.add_argument("-i",'--INPUT',type=str,required=True,help="Input set of FASTQ or FASTA files packed into a unique .ZIP or .TAR.GZ file.")
+parser.add_argument("-i",'--INPUT',type=str,required=True,help="Input set of FASTQ files packed into a unique .ZIP or .TAR.GZ file.")
 parser.add_argument("-m",'--METHOD',type=str,required=True,help="Method used to obtain reads (old or new). Old - demultiplexing needed, new - without demultiplexing.")
 parser.add_argument("-bp",'--BARPRI',type=str,required=False,help="CSV file with primer and barcode data for old method.")
 parser.add_argument("-p",'--PRIMER',type=str,required=False,help="CSV file with primer data for new method.")
@@ -79,23 +82,22 @@ else:
     
 
 # Clustering parametres
-
 if args.SUBERROR == None:
     substitution_error_threshold = 1
 else:
-    substitution_error_threshold = args.SUBERROR #threshold dla dopuszczalnego błędu substytucji aby odczyt mógł zostać przypisany do danego klastra (w %)
+    substitution_error_threshold = args.SUBERROR 
 
 
 if args.DOMFREQ == None:
     min_dominant_frequency_threshold = 25
 else:
-	min_dominant_frequency_threshold = args.DOMFREQ #granica częstości występowania w odniesieniu do sekwencji dominującej
+	min_dominant_frequency_threshold = args.DOMFREQ 
 
 
 if args.AMFREQ == None:
     min_amplicon_seq_frequency = 0.25
 else:
-	min_amplicon_seq_frequency = args.AMFREQ # granica częstości występowania w odniesieniu do wszystkich sekwencji w amplikonie
+	min_amplicon_seq_frequency = args.AMFREQ 
 
 # Filtering parameters
 if args.CHIMERA == None:
@@ -131,45 +133,47 @@ else:
 
 ### Folder creating ###
 
-# Główny folder
+# Main folder
 p1 = f'{output_dir}/ampliSAS_analysis'
 os.makedirs(p1)
 
-# Folder wstępnej analizy
+# Prework file analysis folder
 prework_dir = f'{p1}/prework'
-os.mkdir(prework_dir)
+#os.mkdir(prework_dir)
 
-# Folder do wypakowania plików
+# File unpacking folder
 pre_input = f'{prework_dir}/pre_input'
-os.mkdir(pre_input)
+#os.mkdir(pre_input)
 
-# Folder plików po merge
+# After merge folder
 merged = f'{prework_dir}/merged'
-os.mkdir(merged)
+#os.mkdir(merged)
 
-# Folder plików po przyczinaniu
+# After trimming folder
 trimmed = f'{prework_dir}/trimmed'
 os.mkdir(trimmed)
 
-# Folder plików po usunięciu starterów
+# After cuting primers folder
 clean = f'{prework_dir}/clean'
 os.mkdir(clean)
 
-# Folder plików po usunięciu metek i demultipleksowaniu
+# After file demultiplexing and barcode cutting folder
 disbarred_dir = f'{clean}/disbarred'
 os.mkdir(disbarred_dir)
 
-# 
+# Folder for fasta files of parsed amplicons
 p7 = f'{p1}/fasta'
 os.mkdir(p7)
 
-p8 = f'{p1}/amplicons_filtered_seqs' # Tu będa znajdowały się foldery dla każdego amplikonu zawierające każdą sekwencję w amplikonie jako osobny plik fasta. Sekwencje te są już przefiltrowane względem długości, głebi itd
+# Folder for individual fasta sequences within amplicons used in fogssa alignment
+p8 = f'{p1}/amplicons_filtered_seqs'
 os.mkdir(p8)
 
+# Folder for storing amplicons and cluster found in them
 p9 = f'{p1}/clusters'
 os.mkdir(p9)
 
-# Folder plików
+# Folder for filtered allels for each amplicons
 p10 = f'{p1}/filtered'
 os.mkdir(p10)
 
@@ -185,51 +189,51 @@ shutil.unpack_archive(input_multifile, pre_input)
 class Prework:
     def __init__(self):
         pass
-    
-    
+
+	# Function for R1 R2 files merging        
     def pear(self, file_left, file_right, name, outdir, threads):
         output = f'{outdir}/{name}'
         command = f'pear -f {file_left} -r {file_right} -o {output} -v 5 -j {threads}'
         process = subprocess.check_output(command, shell=True)
-        
-    
+
+	# Function for for cleaning sequences containing N bases             
     def grep(self, file, name, outdir):        
         command = f'cat {file} | seqkit grep -i -s -v -p N > {outdir}/{name}_Nout.fastq'
         process = subprocess.check_output(command, shell=True)
-        
+
+	# Function for cutting out primers        
     def cut_primers(self, file, name, forward, reverse, region_f, region_r, outdir):
         command = f'seqkit amplicon {file} -F {forward} -R {reverse} -r {region_f}:{region_r} -o {outdir}/{name}_trimmed.fastq'
         process = subprocess.check_output(command, shell=True)
-        
-        
+                
         
 class Amplicon:
     def __init__(self, number):
         self.number = number
         self.clusters = None
         self.amplicon_table = pd.DataFrame(columns = ['Hash', 'ID', 'Sequence', 'Depth', 'Length', 'Frequency'])
-        
-            
+
+	# Function for parsing fasta/fastq files and calculation of first statistics (sequence length, depth of sequence and amplicon)                    
     def parse_sequence_file(self, inputfastq, method_end):         
 
-        dedup_records = defaultdict(list) #tworzy słownik, dla których wartościami jest lista
+        dedup_records = defaultdict(list) 
 
         for record in SeqIO.parse(inputfastq, method_end):
-            dedup_records[str(record.seq)].append(record.id) #tworzy słownik, dla którego key=seq, a value=id. Na tym etapie dochodzi do odnalezienia duplikatów - jest ich tyle wartości id
-        for seq, ids in sorted(dedup_records.items(), key=lambda t: len(t[1]), reverse=True): #ta linijka służy przesortowaniu sekwencji pod względem ich głębokości                
+            dedup_records[str(record.seq)].append(record.id) # creates dictionary, in which key=seq and value=id. This is the faze at which duplicates are found - number of duplicates is the number of ids for each unique sequence. Number of duplicates is the depth of this read 
+        for seq, ids in sorted(dedup_records.items(), key=lambda t: len(t[1]), reverse=True): #sorts sequences based on the depth                
             id_hold = ids[0]
             id_len = len(ids)
             seq_len = len(seq)
             unique_hash = str(uuid.uuid1())
             self.amplicon_table = self.amplicon_table.append({'Hash' : unique_hash, 'ID' : id_hold, 'Sequence' : seq, 'Depth' : id_len, 'Length' : seq_len}, ignore_index = True)
         
-        depth_of_amplicon = self.amplicon_table['Depth'].sum() #Wylicza głębie całego amplikonu
+        depth_of_amplicon = self.amplicon_table['Depth'].sum() # Calculates depth of the whole amplicon
         
         self.amplicon_table['Frequency'] = self.amplicon_table['Depth']/depth_of_amplicon*100
                     
         return self.amplicon_table
 
-    
+	# Function for finding expected length of marker, and filtering sequences incomplicent with expected variance
     def find_minmax(self):
         if args.EXPLEN == None:
             expected_length = self.amplicon_table.loc[0, 'Length']
@@ -239,18 +243,18 @@ class Amplicon:
         max_length = expected_length + 15
         min_length = expected_length - 15
         
-        self.amplicon_table.drop(self.amplicon_table[self.amplicon_table.Length < min_length].index, inplace=True)  #odrzuca sekwencje o długości niższej niż zadana przez użytkownika
-        self.amplicon_table.drop(self.amplicon_table[self.amplicon_table.Length > max_length].index, inplace=True)  #odrzuca sekwencje o długości wyższej niż zadana przez użytkownika
+        self.amplicon_table.drop(self.amplicon_table[self.amplicon_table.Length < min_length].index, inplace=True)
+        self.amplicon_table.drop(self.amplicon_table[self.amplicon_table.Length > max_length].index, inplace=True)
         self.amplicon_table.reset_index(drop=True, inplace=True)
         
-    
+    # Fucntion for creating fasta file for each amplicon
     def create_fasta(self, inputs_dir):
         outpath = f'{inputs_dir}/{self.number}_amplicon.fasta'
         with open(outpath, 'w') as outfile:
             for index, row in self.amplicon_table[ ['Hash', 'ID', 'Sequence', 'Depth', 'Length', 'Frequency'] ].iterrows():
                 outfile.write('>' + row.Hash + ' | ' + row.ID + ' | depth: ' + str(row.Depth) + ' | length: ' + str(row.Length) + ' | frequency per amplicon: ' + str(row.Frequency) + '\n' + row.Sequence + '\n')
                 
-                
+    # Function for creating fasta file for each sequence in amplicon            
     def create_seq_fasta(self, seqs_fasta_dir):
         for index, row in self.amplicon_table[ ['Hash', 'ID', 'Sequence', 'Depth', 'Length', 'Frequency'] ].iterrows():
             outpath = f'{seqs_fasta_dir}/{row.Hash}.fasta'
@@ -263,30 +267,28 @@ class Cluster:
         self.dominant_seq = None
         self.amplicon = amplicon
                                
-                
+    # Function for sequence alignment with FOGSSA
     def seq2seq(self, seq1, seq2, substitution_error_threshold, number):
         command = f'./fogsaa {seq1} {seq2} 1 0 1 -1 -1'
-        process = subprocess.check_output(command, shell=True) #Przykładowy wynik: b'176\n176\nElapsed time: 1 milliseconds\ntotal nodes expanded==176\n\nscore= 174\n'
-        process = process.decode('utf-8') #Zamiana bajtów na str
+        process = subprocess.check_output(command, shell=True) #Example output: b'176\n176\nElapsed time: 1 milliseconds\ntotal nodes expanded==176\n\nscore= 174\n'
+        process = process.decode('utf-8')
 
+        # Extracts alignment score         
+        score = int(re.sub('score=\ ', '', ' '.join(map(str, re.findall('score=\ .[0-9]*', process))))) 
+        # Extracts alignment length
+        len_seqs = int(re.sub('score=\ ', '', ' '.join(map(str, re.findall('(?<=[0-9]\s)[0-9]+', process)))))
                 
-        score = int(re.sub('score=\ ', '', ' '.join(map(str, re.findall('score=\ .[0-9]*', process))))) # Wyodrębnienie score dla alignmentu
-        #print(f'Score: {score}')
-        len_seqs = int(re.sub('score=\ ', '', ' '.join(map(str, re.findall('(?<=[0-9]\s)[0-9]+', process))))) # Wyodrębnia długość porównywanych sekwencji - założenie, że porównywane sekwencje są tylko tej samej długości
-        
-        
         global substitution_error
-        substitution_error = (len_seqs - score)/len_seqs*100 # Wylicza poziom błedów dla danego alignmentu
+        substitution_error = (len_seqs - score)/len_seqs*100
         
-        
+    # Function for consensus sequence creating    
     def multiple_aline_seqs(self, cluster_df, clusters_dir, number):
-        #Tworzenie wspólnej fasty dla klastra
+        # Creates fasta for each cluster
         outpath = f'{clusters_dir}/{number}_cluster.fasta'
         with open(outpath, 'w') as outfile:
             for index, row in cluster_df[ ['Hash', 'ID', 'Sequence', 'Depth', 'Length', 'Frequency'] ].iterrows():
                 outfile.write('>' + row.Hash + ' | ' + row.ID + ' | depth: ' + str(row.Depth) + ' | length: ' + str(row.Length) + ' | frequency per amplicon: ' + str(row.Frequency) + '\n' + row.Sequence + '\n')
                                 
-        # Stworzenie dataframe na sekwencję konsensusową z danymi
         global consensus_df
         
         consensus_df = pd.DataFrame(columns = ['ID', 'Sequence', 'Depth', 'Length'])
@@ -294,7 +296,7 @@ class Cluster:
         len_cluster = cluster_df.iloc[0, 4]
         depth_cluster = cluster_df['Depth'].sum()
                
-        #Ustalenie konsensusowej
+        # Creates consensus sequence
         align = AlignIO.read(outpath, 'fasta')
         summary_align = AlignInfo.SummaryInfo(align)
         consensus = str(summary_align.dumb_consensus())
@@ -307,7 +309,7 @@ class Filter:
     def __init__(self):
         pass
 
-        
+    # Fucntion for checking if sequence is a chimera    
     def is_chimera(self, cons_seqs_df):
         seqs_count = len(cons_seqs_df)
         cons_seqs_df['Chimera'] = 'Not'
@@ -315,8 +317,8 @@ class Filter:
             reversed_df = cons_seqs_df.sort_values(['Depth'])
             
             indexer = [i for i in range(0, seqs_count)]
-            #Do ustalenia
-            identity_threshold = 30
+            
+            identity_threshold = 90
             
             
             for j in indexer:
@@ -331,11 +333,11 @@ class Filter:
                     score = int(search2.group(0))
                     align_length = int(search3.group(0))
                     
-                    #Wylicza identity
+                    
                     identity = score/align_length*100
                     if identity < identity_threshold:
                         seq2_list = list(aligned_seq)
-                        # Tworzy binary score
+                        # Binary score creation
                         binary_score = []
                         for base in seq2_list:
                             if base == 'A' or base == 'T' or base == 'C' or base == 'G':
@@ -346,11 +348,11 @@ class Filter:
                         binary_score_right_end = binary_score[:min_chimera_length] #Wycinek długości chimera_length bp z prawej
                         binary_score_left_end = binary_score[-min_chimera_length:] #Wycinek długości chimera_length bp z lewej
                         
-                        #Sprawdzanie prawej i lewej strony alignmentu
-                        if len(set(binary_score_right_end)) == 1 and binary_score_right_end[0] == 1: #Sprawdza czy wszystkie elementy listy są takie same za pomocą setu 
-                            #(set zwiera tylko unikalne wartości, więc jeśli elementy listy były takie same powinien być tylko 1)
+                        #Checking left and right side of alignment
+                        if len(set(binary_score_right_end)) == 1 and binary_score_right_end[0] == 1: #Checks if all list elements are the same 
+                            #(set contains only unique values, if elements are the same it should only contains 1)
                             
-                            #Pętla od początku
+                            #Loop from the beginning
                             for k in indexer:
                                 if k != i:
                                     seq3 = str(cons_seqs_df.at[k, 'Sequence'])
@@ -365,7 +367,7 @@ class Filter:
                                     identity_l = score/align_length_l*100
                                     if identity_l < identity_threshold:
                                         seq2_list_l = list(aligned_seq_l)
-                                        # Tworzy binary score
+                                        # Binary score creation
                                         binary_score_l = []
                                         for base in seq2_list_l:
                                             if base == 'A' or base == 'T' or base == 'C' or base == 'G':
@@ -377,13 +379,12 @@ class Filter:
                                     
                                         if len(set(binary_score_left_end2)) == 1 and binary_score_left_end2[0] == 1:
                                             
-                                            #Sekwencja jest chimerą
+                                            # Sequence is a chimera
                                             reversed_df.at[j, 'Chimera'] = 'chimera'
                             
                             
                         elif len(set(binary_score_left_end)) == 1 and binary_score_left_end[0] == 1:
-                            #Pętla od początku
-                            #Pętla od początku
+                            #Loop from the beginning
                             for k in indexer:
                                 if k != i:
                                     seq3 = str(cons_seqs_df.at[k, 'Sequence'])
@@ -398,7 +399,7 @@ class Filter:
                                     identity_r = score/align_length_r*100
                                     if identity_r < identity_threshold:
                                         seq2_list_r = list(aligned_seq_r)
-                                        # Tworzy binary score
+                                        # Binary score creation
                                         binary_score_r = []
                                         for base in seq2_list_r:
                                             if base == 'A' or base == 'T' or base == 'C' or base == 'G':
@@ -410,11 +411,11 @@ class Filter:
                                     
                                         if len(set(binary_score_right_end2)) == 1 and binary_score_right_end2[0] == 1:
                                             
-                                            #Sekwencja jest chimerą
+                                            #Sequence is a chimera
                                             reversed_df.at[j, 'Chimera'] = 'chimera'
             
             
-            # Filtrowanie po chimerach, przywracanie właściwej kolejności po głębi i przywrócenie właściwych indeksów
+            # Chimera droping, restoration if the right indexes and order by depth
             filtered_seqs = reversed_df.drop(reversed_df[reversed_df.Chimera == 'chimera'].index)
             filtered_seqs.sort_values(['Depth'], inplace=True)
             cons_seqs_df = filtered_seqs.reset_index(drop=True)
@@ -429,11 +430,11 @@ def new_method():
     
     prework = Prework()
     
-    #Ekstrakcja sekwencji z gz
+    # Sequence extraction from gz
     for filename in os.scandir(pre_input):
         os.system('gunzip ' + filename.path)
     
-    # Utworzenie listy z nazwami plików
+    # File names list
     all_files_name = os.listdir(pre_input)
     all_files_name.sort()
     
@@ -446,10 +447,10 @@ def new_method():
         name_stripped = re.sub(pattern, '', name)
         names_list.append(name_stripped)
     
-    # Ilość osobników analizowanych
+    # Count of analised files
     iterator = [i for i in range(len(left_files))]
     
-    # Merge plików
+    # Files merge
     for i in iterator:
         left_file_name = left_files[i]
         left_file = f'{pre_input}/{left_file_name}'
@@ -466,12 +467,12 @@ def new_method():
     
     os.chdir(current)
     
-    # Oczyszczenie plików
+    # Files cleaning
     for filename in os.scandir(merged):
         name = os.path.basename(filename.path)
         prework.grep(filename.path, name, trimmed)
         
-    # Usuwanie starterów
+    # Primers cutting
     primers = pd.read_csv(primers_file)
     primer_f = primers.at[0, 'primer_f']
     primer_r_rc = str(Seq(primers.at[0, 'primer_r']).reverse_complement())
@@ -488,11 +489,11 @@ def old_method():
     
     prework = Prework()
     
-    #Ekstrakcja sekwencji z gz
+    # Sequence extration
     for filename in os.scandir(pre_input):
         os.system('gunzip ' + filename.path)
       
-    #Utworzenie listy z nazwami plików
+    # File names list
     all_files_name = os.listdir(pre_input)
     all_files_name.sort()
     
@@ -514,17 +515,17 @@ def old_method():
     
     os.chdir(current)
     
-    # Oczyszczanie plików
+    # Files cleaning
     for filename in os.scandir(merged):
         name = os.path.basename(filename.path)
         prework.grep(filename.path, name, trimmed)
         
-    ### Usuwanie starterów
+    ### primers cutting
     
-    # Wczytanie pliku barkodów
+    # Barcode file reading
     data = pd.read_csv(barcode_file)
     
-    # Wyznaczenie starterów
+    # Primers reading
     primer_f = data.at[0, 'primer_f']
     primer_r_rc = str(Seq(data.at[0, 'primer_r']).reverse_complement())
     region_f = len(primer_f)+1
@@ -568,13 +569,13 @@ def old_method():
                 amplicon_df.at[0, 'ID'] = checked_id
                 amplicon_df.at[0, 'Sequence'] = strippedB
                 
-            #all_amplicons = all_amplicons.append(amplicon_df.iloc[0])
+
             frames = [all_amplicons, amplicon_df]
             all_amplicons = pd.concat(frames, ignore_index=True)
             
     all_amplicons.sort_values(by=['Amplicon'], inplace=True)
     
-    # Tworzenie fasta dla poszczególnych amplikonów
+    # Creates files for each amplicon
     for k in iterator:
         amplicon_number = data.at[k, 'sample']
         amplicon_f_df = all_amplicons[all_amplicons['Amplicon'] == amplicon_number]
@@ -583,7 +584,7 @@ def old_method():
             for index, row in amplicon_f_df [ ['ID', 'Sequence'] ].iterrows():
                 outfile.write('>' + row.ID + '\n' + row.Sequence + '\n')
                 
-        # Wycięcie starterów
+        # Primers cutting
         command = f'cat {outpath} | seqkit amplicon -F {primer_f} -R {primer_r_rc} -r {region_f}:{region_r} -o {clean}/amplicon_{amplicon_number}.fa'
         process = subprocess.check_output(command, shell=True)
 
@@ -596,7 +597,7 @@ def fazeI(pair):
     go = Amplicon(files)
     go.parse_sequence_file(filepath, method_end)
         
-    #Odrzucenie amplikonów o zbyt małej głębokości
+    # Droping amplicons with too low depth
     depth_of_amplicon = go.amplicon_table['Depth'].sum()
     if depth_of_amplicon >= min_amplicon_depth:
         
@@ -609,7 +610,7 @@ def fazeI(pair):
         
         seqs_fasta_dir = f'{p8}/amplicon_{files}'
         os.mkdir(seqs_fasta_dir)
-        go.create_seq_fasta(seqs_fasta_dir) #Tworzy fasty dla każdej sekwencji w amplikonie
+        go.create_seq_fasta(seqs_fasta_dir) # Creates fasta for each sequence in amplicon
         
         clusters_dir = f'{p9}/amplicon_{files}'
         os.mkdir(clusters_dir)
@@ -618,11 +619,11 @@ def fazeI(pair):
         current = os.getcwd()
         os.chdir(clusters_dir)
         
-        do = Cluster(files)   #Wczytanie pliku z funkcjami klastrowania
+        do = Cluster(files)
         
         all_clusters = pd.DataFrame(columns = ['ID', 'Sequence', 'Depth', 'Length'])
         
-        go.amplicon_table['state'] = 'U' #Dodanie kolumny 'state'
+        go.amplicon_table['state'] = 'U' # 'U' flag for not clastered sequences
         
         index_list = list(go.amplicon_table.index.values)
         
@@ -656,7 +657,7 @@ def fazeI(pair):
                         
                                     if freq_to_dom < min_dominant_frequency_threshold:
 
-                                        cluster_pd = cluster_pd.append(go.amplicon_table.loc[index]) #dodaje sekwencję do klastra dominującego
+                                        cluster_pd = cluster_pd.append(go.amplicon_table.loc[index]) # add sequence to dominant cluster
                                         go.amplicon_table.at[index, 'state'] = 'C'
 
                     do.multiple_aline_seqs(cluster_pd, "./", index_klastra)
@@ -664,14 +665,14 @@ def fazeI(pair):
 
                     all_clusters = all_clusters.append(consensus_df.iloc[0])
         
-        #Stworzenie ostatecznego pliku fasta z sekwencjami konsensusowymi dla danego amplikonu
+        # creates file for all consensus sequences in amplicon
         
         outpath = './consensus_seqs.fasta'
         with open(outpath, 'w') as outfile:
             for index, row in all_clusters[ ['ID', 'Sequence', 'Depth', 'Length'] ].iterrows():
                 outfile.write('>' + row.ID + ' | depth: ' + str(row. Depth) + ' | length: ' + str(row.Length) + '\n' + row.Sequence + '\n')
                 
-        # Stworzenie pliku csv z sewkencjami konsenusowymi
+        # Creates .csv file with consensus sequneces
         outpath2 = './consensus_seqs.csv'
         all_clusters.to_csv(outpath2, index=False)
         os.chdir(current)
@@ -679,11 +680,28 @@ def fazeI(pair):
         
         outpath3 = f'{clusters_dir}/amplicon_info.csv'
         Stats_table_amplicon_depth.to_csv(outpath3, index=False)
+        
+    else:
+    	clusters_dir = f'{p9}/amplicon_{files}'
+        os.mkdir(clusters_dir)
+        
+        all_clusters = = pd.DataFrame(columns = ['ID', 'Sequence', 'Depth', 'Length'])
+        Stats_table_amplicon_depth = = pd.DataFrame(columns = ['Amplicon', 'Amplicon_updated', 'Depth'])
+        Stats_table_amplicon_depth.at[files-1, 'Depth'] = 0
+        Stats_table_amplicon_depth.at[files-1, 'Amplicon'] = files
+        
+        # Creates .csv file with consensus sequneces
+        outpath2 = '{clusters_dir}/consensus_seqs.csv'
+        all_clusters.to_csv(outpath2, index=False)
+        
+        outpath3 = f'{clusters_dir}/amplicon_info.csv'
+        Stats_table_amplicon_depth.to_csv(outpath3, index=False)
                         
 ################ END OF FUNCTIONS ########################
 ##########################################################
 
-#Prework start
+# Checks the method type and executes right pre genotyping pipeline
+
 if method == 'new':
 	method_end = 'fastq'
 	new_method()
@@ -694,7 +712,7 @@ elif method == 'old':
 	
 
 
-### Stworzenie listy z numerami i ścieżkami do plików dla klastrowania
+### Creates list of numer and files for clustering
 
 files = 0
 command_list = []
@@ -706,7 +724,7 @@ for filename in os.scandir(clean):
         command_list.append(line)
 
 
-       
+# Function for working clustering faze on multiple threads       
 def fazeII():
     start = time.time()
     pool = Pool(processes=4)
@@ -715,22 +733,23 @@ def fazeII():
     end = time.time()
     delta = end-start
     print(f'Operacja zabrała {delta:.3f} sekund')
-    
+
+# Start clustering   
 fazeII()
         
 
-### FILTROWANIE ###
+### FILTERING ###
 
 
 all_allels = pd.DataFrame(columns = ['Amplicon', 'ID', 'Sequence', 'Depth', 'Length', 'Frequency'])
 
-# Ilość amplikonów
+# Amplicon count
 files = 0
 for filename in os.scandir(p9):
     if filename.is_dir():
         files = files+1
 
-# Lista ilości amplikonów        
+        
 no_files = [i for i in range(1, files+1)]
 
 
@@ -739,39 +758,36 @@ for i in no_files:
     cons_seqs_df = pd.read_csv(con_seqs_dir)
     be = Filter()
     
-    depth_of_amplicon = cons_seqs_df['Depth'].sum()  # Wylicza głębię całego amplikonu dla sekwencji konsensusowych
-    cons_seqs_df['Frequency'] = cons_seqs_df['Depth']/depth_of_amplicon*100 # Wylicza częstość występowania sekwencji w amplikonie
+    depth_of_amplicon = cons_seqs_df['Depth'].sum()  # Calculates depth for consensus sequences
+    cons_seqs_df['Frequency'] = cons_seqs_df['Depth']/depth_of_amplicon*100 # Calculates frequency for each consensus sequence
     
-    #Odrzuca sewkencje o zbyt niskiej głębi
+    # Drop allels with depth lower than threshold
     cons_seqs_df.drop(cons_seqs_df[cons_seqs_df.Depth < min_allel_depth].index, inplace=True)
-    #Odrzuca sekwencje o zbyt niskiej czestotliwości
+    # Drop allels with frequency lower than threshold
     cons_seqs_df.drop(cons_seqs_df[cons_seqs_df.Frequency < min_amplicon_seq_frequency].index, inplace=True)
     
     cons_seqs_df.reset_index(drop=True, inplace=True)
 
     
-    # CHIMERY
+    # Drop chimeras
     be.is_chimera(cons_seqs_df)
 
     
-    #Odrzucanie nadmiernej ilości alleli w amplikonie
+    # Drop allels if there is the threshold for allel number
     seqs_count = len(cons_seqs_df)
     if seqs_count > max_allele_number:
         cons_seqs_df = cons_seqs_df[:max_allele_number]
 
-    
-    #Dodanie kolumny z nazwą amplikonu
     cons_seqs_df.insert(0, 'Amplicon', i)
     
-    #Dodanie linijki
     all_allels = all_allels.append(cons_seqs_df)
     
-    #Głębia amplikonu
+    # Calculates depth of the amplicon
     a_info_dir = f'{p9}/amplicon_{i}/amplicon_info.csv'
     a_info_df = pd.read_csv(a_info_dir)
     current_depth = a_info_df.at[0, 'Depth']
     
-    #Stworzenie ostatecznego pliku fasta z allelami dla danego amplikonu
+    # Crreates fasta with allels for each amplicon
         
     outpath = f'{p10}/amplicon{i}.fasta'
     with open(outpath, 'w') as outfile:
@@ -785,28 +801,23 @@ whole_depth =  all_allels['Depth'].sum()
 droped_duplcates = all_allels.drop_duplicates(subset=['Sequence'])
 labels = droped_duplcates['Sequence'].tolist()
 
-#all_allels.groupby(labels)
 
 final_allels = pd.DataFrame(columns = ['Amplicon', 'ID', 'Sequence', 'Depth', 'Length', 'Frequency', 'Frequency_across_amplicons'])
 final_stats = pd.DataFrame(columns = ['Sequence', 'Amplicons', 'Count', 'Depth', 'Frequency_across_amplicons', 'Mean_freq', 'Max_freq', 'Min_freq'])
 
-# len_df = len(all_allels)
-# iterator = [i for i in range(len_df)]
 
 for label in labels:
     allel_df = pd.DataFrame(columns = ['Amplicon', 'ID', 'Sequence', 'Depth', 'Length', 'Frequency', 'Frequency_across_amplicons'])
     allel_stats = pd.DataFrame(columns = ['Sequence', 'Amplicons', 'Count', 'Depth', 'Frequency_across_amplicons', 'Mean_freq', 'Max_freq', 'Min_freq'])
     
     for index, row in all_allels[ ['Amplicon', 'ID', 'Sequence', 'Depth', 'Length', 'Frequency'] ].iterrows():
-#     for x in iterator:
         if all_allels.at[index, 'Sequence'] == label:
-        #if row.Sequence == label:
             allel_df = allel_df.append(all_allels.iloc[index])
     
     allel_df.reset_index(drop=True, inplace=True)
-    allel_depth = allel_df['Depth'].sum() #Głębia allela na przestrzeni wszystkich amplikonów
-    allel_df['Frequency_across_amplicons'] = allel_depth/whole_depth*100 #Częstość występowania na przestrzeni wszystkich ampikonów
-    count = len(allel_df) #Ilość wystąpień danego allela we wszustkich amplikonach
+    allel_depth = allel_df['Depth'].sum() # Allel depth across every amplicon
+    allel_df['Frequency_across_amplicons'] = allel_depth/whole_depth*100 # Frequency of allel across every amplicon
+    count = len(allel_df) # Count of allel across every amplcons
     
     amplicon_list = [] 
     for index, row in allel_df[ ['Amplicon', 'ID', 'Sequence', 'Depth', 'Length', 'Frequency', 'Frequency_across_amplicons'] ].iterrows():
@@ -824,17 +835,16 @@ for label in labels:
     final_stats = final_stats.append(allel_stats)
     final_stats.sort_values(['Frequency_across_amplicons'], ascending=False, inplace=True)
     
-    #Dołącznie allela z częstością do df końcowego
     final_allels = final_allels.append(allel_df)
     final_allels.sort_values(['Amplicon'], inplace=True)
     
-# Stworzenie outputu fasta dla ostatecznych sekwencji
+# Creates files with all allels
 outpath = f'{p10}/all_allels.fasta'
 with open(outpath, 'w') as outfile:
     for index, row in final_allels[ ['Amplicon', 'ID', 'Sequence', 'Depth', 'Length', 'Frequency', 'Frequency_across_amplicons'] ].iterrows():
         outfile.write('>' + 'Amplicon: ' + str(row.Amplicon) + ' | ' + row.ID + ' | depth: ' + str(row. Depth) + ' | length: ' + str(row.Length) + ' | frequency: ' + str(row.Frequency) + ' | frequency across amplicons: ' + str(row.Frequency_across_amplicons) + '\n' + row.Sequence + '\n')
 
-#Stworzenie outputu tsv dla ostatecznych sekwencji
+# Creates files with final statistics
 outpath = f'{p10}/all_allels_stats.csv'
 final_stats.to_csv(outpath, index=False)
 

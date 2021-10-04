@@ -139,15 +139,15 @@ os.makedirs(p1)
 
 # Prework file analysis folder
 prework_dir = f'{p1}/prework'
-#os.mkdir(prework_dir)
+os.mkdir(prework_dir)
 
 # File unpacking folder
 pre_input = f'{prework_dir}/pre_input'
-#os.mkdir(pre_input)
+os.mkdir(pre_input)
 
 # After merge folder
 merged = f'{prework_dir}/merged'
-#os.mkdir(merged)
+os.mkdir(merged)
 
 # After trimming folder
 trimmed = f'{prework_dir}/trimmed'
@@ -165,7 +165,7 @@ os.mkdir(disbarred_dir)
 p7 = f'{p1}/fasta'
 os.mkdir(p7)
 
-# Folder for individual fasta sequences within amplicons used in fogssa alignment
+# Folder for individual fasta sequences within amplicons used in fogsaa alignment
 p8 = f'{p1}/amplicons_filtered_seqs'
 os.mkdir(p8)
 
@@ -267,7 +267,7 @@ class Cluster:
         self.dominant_seq = None
         self.amplicon = amplicon
                                
-    # Function for sequence alignment with FOGSSA
+    # Function for sequence alignment with FOGSAA
     def seq2seq(self, seq1, seq2, substitution_error_threshold, number):
         command = f'./fogsaa {seq1} {seq2} 1 0 1 -1 -1'
         process = subprocess.check_output(command, shell=True) #Example output: b'176\n176\nElapsed time: 1 milliseconds\ntotal nodes expanded==176\n\nscore= 174\n'
@@ -682,10 +682,10 @@ def fazeI(pair):
         Stats_table_amplicon_depth.to_csv(outpath3, index=False)
         
     else:
-    	clusters_dir = f'{p9}/amplicon_{files}'
+        clusters_dir = f'{p9}/amplicon_{files}'
         os.mkdir(clusters_dir)
         
-        all_clusters = = pd.DataFrame(columns = ['ID', 'Sequence', 'Depth', 'Length'])
+        all_clusters = pd.DataFrame(columns = ['ID', 'Sequence', 'Depth', 'Length'])
         Stats_table_amplicon_depth = = pd.DataFrame(columns = ['Amplicon', 'Amplicon_updated', 'Depth'])
         Stats_table_amplicon_depth.at[files-1, 'Depth'] = 0
         Stats_table_amplicon_depth.at[files-1, 'Amplicon'] = files

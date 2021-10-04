@@ -57,7 +57,7 @@ Options:
 
 `-p, type=str, required=False, help="CSV file with primer data for new method. 5'->3' direction."`
 
-`-o, type=str, required=True, help="Output folder name."`
+`-o, type=str, required=True, help="Output folder full path."`
 
 `-el, type=int, required=False, help="Expected length of the marker sequence."`
 
